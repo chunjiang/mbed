@@ -27,6 +27,8 @@ extern "C" {
 typedef struct pwmout_s pwmout_t;
 
 void pwmout_init         (pwmout_t* obj, PinName pin);
+void pwmout_inverse_init (pwmout_t* obj, PinName pin);
+
 void pwmout_free         (pwmout_t* obj);
 
 void  pwmout_write       (pwmout_t* obj, float percent);

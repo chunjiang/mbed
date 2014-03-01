@@ -70,6 +70,53 @@ void pwmout_init(pwmout_t* obj, PinName pin) {
     pinmap_pinout(pin, PinMap_PWM);
 }
 
+void pwmout_inverse_init(pwmout_t* obj, PinName pin) {
+    // determine the channel
+    PWMName pwm = (PWMName)pinmap_peripheral(pin, PinMap_PWM);
+    if (pwm == (PWMName)NC)
+        error("PwmOut pin mapping failed");
+    
+    uint32_t clkdiv = 0;
+    float clkval;
+    if (mcgpllfll_frequency()) {
+        SIM->SOPT2 |= SIM_SOPT2_TPMSRC(1); // Clock source: MCGFLLCLK or MCGPLLCLK
+        clkval = mcgpllfll_frequency() / 1000000.0f;
+    } else {
+        SIM->SOPT2 |= SIM_SOPT2_TPMSRC(2); // Clock source: ExtOsc
+        clkval = extosc_frequency() / 1000000.0f;
+    } 
+    
+    while (clkval > 1) {
+        clkdiv++;
+        clkval /= 2.0;  
+        if (clkdiv == 7)
+            break;
+    }
+    
+    pwm_clock = clkval;
+    unsigned int port = (unsigned int)pin >> PORT_SHIFT;
+    unsigned int tpm_n = (pwm >> TPM_SHIFT);
+    unsigned int ch_n = (pwm & 0xFF);
+
+    SIM->SCGC5 |= 1 << (SIM_SCGC5_PORTA_SHIFT + port);
+    SIM->SCGC6 |= 1 << (SIM_SCGC6_TPM0_SHIFT + tpm_n);
+
+    TPM_Type *tpm = (TPM_Type *)(TPM0_BASE + 0x1000 * tpm_n);
+    tpm->SC = TPM_SC_CMOD(1) | TPM_SC_PS(clkdiv); // (clock)MHz / clkdiv ~= (0.75)MHz
+    tpm->CONTROLS[ch_n].CnSC = (TPM_CnSC_MSB_MASK | TPM_CnSC_ELSA_MASK); /* No Interrupts; Low True pulses on Edge Aligned PWM */
+
+    obj->CnV = &tpm->CONTROLS[ch_n].CnV;
+    obj->MOD = &tpm->MOD;
+    obj->CNT = &tpm->CNT;
+
+    // default to 20ms: standard for servos, and fine for e.g. brightness control
+    pwmout_period_ms(obj, 20);
+    pwmout_write    (obj, 0);
+
+    // Wire pinout
+    pinmap_pinout(pin, PinMap_PWM);
+}
+
 void pwmout_free(pwmout_t* obj) {}
 
 void pwmout_write(pwmout_t* obj, float value) {
