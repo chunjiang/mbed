@@ -61,6 +61,7 @@ void pwmout_init(pwmout_t* obj, PinName pin) {
     obj->CnV = &tpm->CONTROLS[ch_n].CnV;
     obj->MOD = &tpm->MOD;
     obj->CNT = &tpm->CNT;
+    obj->CnSC = &tpm->CONTROLS[ch_n].CnSC;
 
     // default to 20ms: standard for servos, and fine for e.g. brightness control
     pwmout_period_ms(obj, 20);
@@ -108,6 +109,7 @@ void pwmout_inverse_init(pwmout_t* obj, PinName pin) {
     obj->CnV = &tpm->CONTROLS[ch_n].CnV;
     obj->MOD = &tpm->MOD;
     obj->CNT = &tpm->CNT;
+    obj->CnSC = &tpm->CONTROLS[ch_n].CnSC;
 
     // default to 20ms: standard for servos, and fine for e.g. brightness control
     pwmout_period_ms(obj, 20);
@@ -160,4 +162,12 @@ void pwmout_pulsewidth_ms(pwmout_t* obj, int ms) {
 
 void pwmout_pulsewidth_us(pwmout_t* obj, int us) {
     *obj->CnV = (uint32_t)(pwm_clock * (float)us);
+}
+
+void pwmout_setinverted(pwmout_t* obj) {
+    *obj->CnSC = (TPM_CnSC_MSB_MASK | TPM_CnSC_ELSA_MASK); /* No Interrupts; Low True pulses on Edge Aligned PWM */
+}
+
+void pwmout_setnoninverted(pwmout_t* obj) {
+    *obj->CnSC = (TPM_CnSC_MSB_MASK | TPM_CnSC_ELSB_MASK); /* No Interrupts; High True pulses on Edge Aligned PWM */
 }

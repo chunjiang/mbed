@@ -61,20 +61,20 @@ public:
     PwmOut(PinName pin) {
         pwmout_init(&_pwm, pin);
     }
-	
-	/** Create a PwmOut connected to the specified pin as Low True
-	*
-	*   @param pin PwmOut pin to connect to
-	*   @param inv Boolean to invert the pwm signal
-	*/
-	PwmOut(PinName pin, bool inv) {
-		if (inv) {
-			pwmout_inverse_init(&_pwm, pin);
-		}
-		else {
-			pwmout_init(&_pwm, pin);
-		}
-	}
+    
+    /** Create a PwmOut connected to the specified pin as Low True
+    *
+    *   @param pin PwmOut pin to connect to
+    *   @param inv Boolean to invert the pwm signal
+    */
+    PwmOut(PinName pin, bool inv) {
+        if (inv) {
+            pwmout_inverse_init(&_pwm, pin);
+        }
+        else {
+            pwmout_init(&_pwm, pin);
+        }
+    }
 
     /** Set the ouput duty-cycle, specified as a percentage (float)
      *
@@ -139,6 +139,14 @@ public:
      */
     void pulsewidth_us(int us) {
         pwmout_pulsewidth_us(&_pwm, us);
+    }
+
+    void set_inverted() {
+        pwmout_setinverted(&_pwm);
+    }
+
+    void set_noninverted() {
+        pwmout_setnoninverted(&_pwm);
     }
 
 #ifdef MBED_OPERATORS
